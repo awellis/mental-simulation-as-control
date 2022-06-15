@@ -18,10 +18,60 @@ md"""
 It is commonly assumed that the brain's motor system makes use of internal models of the musculoskeletal system and the environment in order to control motor behaviour.
 
 We will briefly discuss ideas originating in [Wolpert & Kawato (1998)](https://www.sciencedirect.com/science/article/pii/S0893608098000665) and explore their application to the mental simulation of behaviour.
+
+> Humans exhibit an enormous repertoire of motor behavior which enables us to interact with many different objects under a variety of different environments.
+
+Motor behavior is formulated as a control problem. In general, the problem of control can be considered as the computational process of determining the input to some system we wish to control ir order to achieve some desired output.
+
+As an example, consider lifting a cup to ones lips. The desired output at time $t$ is a particular acceleration of the hand (as judged by proprioceptive sensory feedback). The input to the system must be a motor command.
 """
 
 # ╔═╡ 7b82b21f-dd19-4f6b-89a4-917f3c7ad770
+md"""
+Motor commands depend on many variables:
+- (varying) state of the body (positions, velocities, orientation relative to gravity)
+- (unvarying) masses, moments of inertia, etc.
+- knowledge of interactions with outside world (e.g. geometry and properties of cup)
 
+All these (and more) can be considered as the context $C$ within which movement takes place. Motor commands must be tailored to take into account the current context.x` 
+"""
+
+# ╔═╡ 45cd5b3a-0a3d-4e80-8cc1-33b734016ad6
+md"""
+## Forward and inverse models
+
+The notion of an internal model, a system which mimics the behavior of a natural process, has emerged as an important theoretical concept in motor control.
+
+There are two varieties of internal model, forward and inverse models. 
+
+Forward models capture the forward or causal relationship between inputs to the system, e.g. the arm, and the outputs (Ito, 1970; Kawato et al., 1987; Jordan, 1995). A forward dynamic model of the arm, for example predicts the next state (e.g. position and velocity) given the current state and motor command.
+
+In contrast, inverse models invert the system by providing the motor command which will cause a desired change in state. Inverse models are, therefore, well suited to act as controllers as they can provide the motor command necessary to achieve some desired state transition.
+
+As both forward and inverse models depend on the dynamics of the motor system, which _change throughout life and under different contextual conditions, these models must be adaptable_.
+
+## Forward and inverse models as inference
+
+In a more modern take, forward and inverse models can be interpreted as two types of inference in a probabilistic model.
+"""
+
+# ╔═╡ 96f3de55-017f-4497-a9ee-0842c1e4a600
+md"""
+## Model
+
+We consider an agent's motor system, which we wish to control by issuing a sequence of motor commands $u_{1...T}$. For simplicity, we consider discrete time. 
+
+The resulting movement trajectory (state of the system) is $x_{1...T}$. 
+
+
+The causal relationship between motor command $u$ and state $x$ is given by:
+
+$x_{t+1} = f(x_t, u_t, c_t)$
+
+This describes the _forward_ dynamics of the system. We assume that the dynamics of the system $f$ are not fixed over time but can take on a possibly infinite number of different forms. These different forms correspond to the context of the movement and include such factors as interactions with objects or changes in the environment. This can either be parameterized by assuming there is a set of system dynamics $f_i$ with $i = 1, 2, ..., n$ or by including a context parameter $c$ as part of the dynamics.
+
+The aim of control is to produce a system which can generate an appropriate motor command $u_t$ given the desired state, $x_{t+1}^\ast$.
+"""
 
 # ╔═╡ 9a641cd1-f031-4dc9-837f-e9e69a13566d
 md"""
@@ -467,7 +517,9 @@ version = "17.4.0+0"
 # ╟─1f29f75d-cb4a-4933-95ec-7b3970bdeafc
 # ╟─fde7f730-eca3-11ec-11fd-a3669efbfb62
 # ╟─9e4cf0fc-6654-4123-993e-39aa714b3731
-# ╠═7b82b21f-dd19-4f6b-89a4-917f3c7ad770
+# ╟─7b82b21f-dd19-4f6b-89a4-917f3c7ad770
+# ╠═45cd5b3a-0a3d-4e80-8cc1-33b734016ad6
+# ╠═96f3de55-017f-4497-a9ee-0842c1e4a600
 # ╟─9a641cd1-f031-4dc9-837f-e9e69a13566d
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
