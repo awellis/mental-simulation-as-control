@@ -1,6 +1,11 @@
 ### A Pluto.jl notebook ###
 # v0.19.8
 
+#> [frontmatter]
+#> author = "Andrew Ellis"
+#> title = "Mental simulation as control"
+#> date = "2022-06-16"
+
 using Markdown
 using InteractiveUtils
 
@@ -83,7 +88,9 @@ The resulting movement trajectory (state of the system) is $x_{1...T}$.
 
 The causal relationship between motor command $u$ and state $x$ is given by:
 
-$x_{t+1} = f(x_t, u_t, c_t)$
+```math
+x_{t+1} = f(x_t, u_t, c_t)
+```
 
 This describes the _forward_ dynamics of the system. We assume that the dynamics of the system $f$ are not fixed over time but can take on a possibly infinite number of different forms. These different forms correspond to the context of the movement and include such factors as interactions with objects or changes in the environment. This can either be parameterized by assuming there is a set of system dynamics $f_i$ with $i = 1, 2, ..., n$ or by including a context parameter $c$ as part of the dynamics.
 
@@ -279,7 +286,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.8.0-rc1"
 manifest_format = "2.0"
-project_hash = "4cef31dd929674ba0efbfaae113666d53ebcc085"
+project_hash = "3c8b7533f980dc02c993f6d674a2c7eccd4e9b80"
 
 [[deps.AbstractFFTs]]
 deps = ["ChainRulesCore", "LinearAlgebra"]
