@@ -7,8 +7,8 @@ using InteractiveUtils
 # ╔═╡ 1b9aeb61-3534-4363-8e27-e7c9df717480
 using Distributions, PlutoUI
 
-# ╔═╡ 1f29f75d-cb4a-4933-95ec-7b3970bdeafc
-TableOfContents(title="📚 Table of Contents", indent=true, depth=4, aside=true)
+# ╔═╡ 45d7f55a-35de-47f6-9ce5-67fbbdeabaf3
+using Base: @kwdef
 
 # ╔═╡ fde7f730-eca3-11ec-11fd-a3669efbfb62
 md"# Simulation as a control problem"
@@ -90,6 +90,83 @@ begin
 
 end
 
+# ╔═╡ 10e1593e-0216-45e6-9c36-206e54848f67
+begin
+
+	@kwdef struct Sensor
+    noise::Distribution = Normal(0, 1.0)
+	end
+
+	@kwdef struct PlannedHeadTurn
+    A::Real = 20 # amplitude
+    D::String = "right" # direction
+    onset::Real = 1
+    duration::Real = 1
+    # @assert A >= zero(A)
+	end
+	
+	function acceleration(D::Number, A::Number, 
+		f::Number, t::Number, start::Number)
+		D * A * sin.(2*π*f*(t-start))
+	end
+	
+end
+
+# ╔═╡ 832c29eb-49b1-41d4-98e7-960fb30ed9a1
+begin
+	function simulate(mᵤ::PlannedHeadTurn,
+    sensor::Sensor;
+    Δt = 0.01,
+    duration::Real = 2)
+		
+    onsetᵤ = mᵤ.onset
+    @assert onsetᵤ >= 0
+    @assert duration > 0
+
+    motion_duration = mᵤ.duration
+    total_duration = duration
+
+    onsetᵤ +  motion_duration <= total_duration || error("Head turn extends beyond simulation event.")
+
+    mᵤ.D ∈ ["left", "right"] || error("Direction not specified.")
+
+    D = mᵤ.D == "left" ? -1 : 1
+    A =mᵤ.A 
+
+    noise = sensor.noise
+    f = 1/(motion_duration) # frequency: single sinusiodal head turn
+
+    timesteps = range(0, stop = total_duration, step = Δt)
+    T = length(timesteps)
+
+    α = zeros(T)
+    ω = zeros(T)
+    θ = zeros(T)
+    y = zeros(T)
+
+    for i ∈ Iterators.drop(1:T, 1)
+
+        t = round(timesteps[i]; digits = 3)
+
+        α[i] = (t > onsetᵤ) & (t < onsetᵤ + duration1) ? acceleration(D, A, f, t, onsetᵤ) : 0
+        ω[i] = ω[i-1] + Δt * α[i]
+        θ[i] = θ[i-1] + Δt * ω[i] + 1/2 * Δt^2 * α[i]
+        y[i] = ω[i] + rand(noise)
+    end
+    
+    out = (timesteps = collect(timesteps),
+            y = y,
+            α = α, 
+            ω = ω, 
+            θ = θ, c = c, 
+            Δt = Δt, onsetᵤ = onsetᵤ,
+            sensor = noise, 
+            mᵤ = mᵤ)
+    return out
+
+end
+end
+
 # ╔═╡ 9a641cd1-f031-4dc9-837f-e9e69a13566d
 md"""
 
@@ -98,6 +175,17 @@ md"""
 Wolpert, D. M., & Kawato, M. (1998). Multiple paired forward and inverse models for motor control. Neural Networks, 11(7), 1317–1329. [https://doi.org/10.1016/S0893-6080(98)00066-5](https://www.sciencedirect.com/science/article/pii/S0893608098000665)
 
 """
+
+# ╔═╡ 2c12b0de-ed33-44b0-88d8-3f3195eb9e98
+html"""<style>
+main {
+    max-width: 100%;
+}
+"""
+
+# ╔═╡ 590e843d-5881-4e41-aab8-3c4ef6bc83bc
+TableOfContents(title="📚 Table of Contents", 
+	indent=true, depth=4, aside=true)
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -531,7 +619,7 @@ version = "17.4.0+0"
 
 # ╔═╡ Cell order:
 # ╠═1b9aeb61-3534-4363-8e27-e7c9df717480
-# ╟─1f29f75d-cb4a-4933-95ec-7b3970bdeafc
+# ╠═45d7f55a-35de-47f6-9ce5-67fbbdeabaf3
 # ╟─fde7f730-eca3-11ec-11fd-a3669efbfb62
 # ╟─9e4cf0fc-6654-4123-993e-39aa714b3731
 # ╟─7b82b21f-dd19-4f6b-89a4-917f3c7ad770
@@ -539,6 +627,10 @@ version = "17.4.0+0"
 # ╟─96f3de55-017f-4497-a9ee-0842c1e4a600
 # ╟─b1161fc7-7779-44ec-a570-b335b3ba9745
 # ╠═7364115d-5f01-45af-86a0-ca3817ccee42
+# ╠═10e1593e-0216-45e6-9c36-206e54848f67
+# ╠═832c29eb-49b1-41d4-98e7-960fb30ed9a1
 # ╟─9a641cd1-f031-4dc9-837f-e9e69a13566d
+# ╠═2c12b0de-ed33-44b0-88d8-3f3195eb9e98
+# ╠═590e843d-5881-4e41-aab8-3c4ef6bc83bc
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
