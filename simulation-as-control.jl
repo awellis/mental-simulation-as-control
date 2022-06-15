@@ -23,6 +23,8 @@ We will briefly discuss ideas originating in [Wolpert & Kawato (1998)](https://w
 
 Motor behavior is formulated as a control problem. In general, the problem of control can be considered as the computational process of determining the input to some system we wish to control ir order to achieve some desired output.
 
+In essence, we can define _control_ as the attempt to make dynamical systems behave in a desirable way.
+
 As an example, consider lifting a cup to ones lips. The desired output at time $t$ is a particular acceleration of the hand (as judged by proprioceptive sensory feedback). The input to the system must be a motor command.
 """
 
@@ -52,7 +54,9 @@ As both forward and inverse models depend on the dynamics of the motor system, w
 
 ## Forward and inverse models as inference
 
-In a more modern take, forward and inverse models can be interpreted as two types of inference in a probabilistic model.
+In a more modern take, forward and inverse models can be interpreted as two types of inference in a probabilistic model. 
+
+This will allow us to deal with uncertainty.
 """
 
 # ╔═╡ 96f3de55-017f-4497-a9ee-0842c1e4a600
@@ -72,6 +76,19 @@ This describes the _forward_ dynamics of the system. We assume that the dynamics
 
 The aim of control is to produce a system which can generate an appropriate motor command $u_t$ given the desired state, $x_{t+1}^\ast$.
 """
+
+# ╔═╡ b1161fc7-7779-44ec-a570-b335b3ba9745
+md"""
+## Code
+
+"""
+
+# ╔═╡ 7364115d-5f01-45af-86a0-ca3817ccee42
+begin
+	tsteps = 200
+	x = μ = Array{Float64}(undef, tsteps)
+
+end
 
 # ╔═╡ 9a641cd1-f031-4dc9-837f-e9e69a13566d
 md"""
@@ -519,7 +536,9 @@ version = "17.4.0+0"
 # ╟─9e4cf0fc-6654-4123-993e-39aa714b3731
 # ╟─7b82b21f-dd19-4f6b-89a4-917f3c7ad770
 # ╠═45cd5b3a-0a3d-4e80-8cc1-33b734016ad6
-# ╠═96f3de55-017f-4497-a9ee-0842c1e4a600
+# ╟─96f3de55-017f-4497-a9ee-0842c1e4a600
+# ╟─b1161fc7-7779-44ec-a570-b335b3ba9745
+# ╠═7364115d-5f01-45af-86a0-ca3817ccee42
 # ╟─9a641cd1-f031-4dc9-837f-e9e69a13566d
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
