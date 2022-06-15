@@ -107,7 +107,7 @@ end
 amplitude = @bind amplitude PlutoUI.Slider(0:20, default = 10)
 
 # ╔═╡ df7ab325-d9ff-4bf7-9bad-d21bd6085305
-fun = @bind fun Select([sin, cos, tan, sqrt])
+fun = @bind fun Select([sin, cos])
 
 # ╔═╡ 10e1593e-0216-45e6-9c36-206e54848f67
 begin
@@ -193,7 +193,7 @@ begin
 
 	sensor = Sensor(noise=Normal(0, 0.5))
 
-	s = simulate(mu, sensor, Δt=0.01, duration=4)
+	s = simulate(mu, sensor, Δt=0.01, duration=2)
 
 end
 
@@ -232,17 +232,22 @@ end
 # ╔═╡ b0adc44e-8e3f-4f9e-b183-c943fd122c69
 begin
 	f1 = with_theme(publication_theme()) do
-    lines(s.timesteps, s.ω,
-        linewidth=10,
-        color="darkorange",
+    lines(s.timesteps, s.α,
+        linewidth=3,
+        color="black",
+		linestyle=:dash,
         axis=(xticks=LinearTicks(6),
             xlabel="Time (s)",
             ylabel="Angular velocity (deg/s)",
             xgridstyle=:dash, ygridstyle=:dash))
-	lines!(s.timesteps, s.α,
-        linewidth=5,
-        color="black")	
-    ylims!(-20, 20)
+	lines!(s.timesteps, s.ω,
+        linewidth=6,
+        color="darkorange")	
+	lines!(s.timesteps, s.θ,
+        linewidth=6,
+        color="blue",
+	    linestyle=:solid,)	
+    ylims!(minimum(s.α) - 1, maximum(s.α) + 1)
     current_figure()
 end
 end
@@ -1508,9 +1513,9 @@ version = "3.5.0+0"
 # ╠═7364115d-5f01-45af-86a0-ca3817ccee42
 # ╠═10e1593e-0216-45e6-9c36-206e54848f67
 # ╠═832c29eb-49b1-41d4-98e7-960fb30ed9a1
-# ╠═6d343fb0-0eb5-43e7-ae6b-34c62a7da084
-# ╠═df7ab325-d9ff-4bf7-9bad-d21bd6085305
-# ╠═50159681-0c1c-4961-8318-d84ab7e95fce
+# ╟─6d343fb0-0eb5-43e7-ae6b-34c62a7da084
+# ╟─df7ab325-d9ff-4bf7-9bad-d21bd6085305
+# ╟─50159681-0c1c-4961-8318-d84ab7e95fce
 # ╠═04796e87-52a5-4edc-a685-c6d28617e928
 # ╠═b0adc44e-8e3f-4f9e-b183-c943fd122c69
 # ╟─9a641cd1-f031-4dc9-837f-e9e69a13566d
