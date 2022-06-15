@@ -86,7 +86,7 @@ md"""
 # ╔═╡ 7364115d-5f01-45af-86a0-ca3817ccee42
 begin
 	tsteps = 200
-	x = μ = Array{Float64}(undef, tsteps)
+	x = Array{Float64}(undef, tsteps)
 
 end
 
@@ -535,7 +535,7 @@ version = "17.4.0+0"
 # ╟─fde7f730-eca3-11ec-11fd-a3669efbfb62
 # ╟─9e4cf0fc-6654-4123-993e-39aa714b3731
 # ╟─7b82b21f-dd19-4f6b-89a4-917f3c7ad770
-# ╠═45cd5b3a-0a3d-4e80-8cc1-33b734016ad6
+# ╟─45cd5b3a-0a3d-4e80-8cc1-33b734016ad6
 # ╟─96f3de55-017f-4497-a9ee-0842c1e4a600
 # ╟─b1161fc7-7779-44ec-a570-b335b3ba9745
 # ╠═7364115d-5f01-45af-86a0-ca3817ccee42
