@@ -187,15 +187,17 @@ end
 # ╔═╡ 50159681-0c1c-4961-8318-d84ab7e95fce
 direction = @bind direction Select(["left", "right"])
 
-# ╔═╡ 04796e87-52a5-4edc-a685-c6d28617e928
-begin
-	mu = PlannedHeadTurn(A=amplitude, D=direction, onset=0.5, duration=1.0)
+# ╔═╡ 57bea528-1106-4935-bfd3-c96426b39e15
+mu = PlannedHeadTurn(A=amplitude, D=direction, onset=0.1, duration=1.0);
 
-	sensor = Sensor(noise=Normal(0, 0.5))
+# ╔═╡ 9ea6db4d-8859-4bb3-86eb-b16d91178dec
+sensor = Sensor(noise=Normal(0, 0.5));
 
-	s = simulate(mu, sensor, Δt=0.01, duration=2)
+# ╔═╡ bb7be262-3487-4130-ab9c-8d1d46c51c3f
+s = simulate(mu, sensor, Δt=0.01, duration=2);
 
-end
+# ╔═╡ 2983a87e-7c52-447a-bbeb-3baeed09e611
+show_observations = @bind show_observations CheckBox()
 
 # ╔═╡ 9a641cd1-f031-4dc9-837f-e9e69a13566d
 md"""
@@ -246,7 +248,11 @@ begin
 	lines!(s.timesteps, s.θ,
         linewidth=6,
         color="blue",
-	    linestyle=:solid,)	
+	    linestyle=:solid)	
+	show_observations && scatter!(s.timesteps, s.y,
+	        color=(:black),
+			marker='◆',
+        	markersize=6)
     ylims!(minimum(s.α) - 1, maximum(s.α) + 1)
     current_figure()
 end
@@ -1516,8 +1522,11 @@ version = "3.5.0+0"
 # ╟─6d343fb0-0eb5-43e7-ae6b-34c62a7da084
 # ╟─df7ab325-d9ff-4bf7-9bad-d21bd6085305
 # ╟─50159681-0c1c-4961-8318-d84ab7e95fce
-# ╠═04796e87-52a5-4edc-a685-c6d28617e928
-# ╠═b0adc44e-8e3f-4f9e-b183-c943fd122c69
+# ╠═57bea528-1106-4935-bfd3-c96426b39e15
+# ╠═9ea6db4d-8859-4bb3-86eb-b16d91178dec
+# ╠═bb7be262-3487-4130-ab9c-8d1d46c51c3f
+# ╟─2983a87e-7c52-447a-bbeb-3baeed09e611
+# ╟─b0adc44e-8e3f-4f9e-b183-c943fd122c69
 # ╟─9a641cd1-f031-4dc9-837f-e9e69a13566d
 # ╠═2c12b0de-ed33-44b0-88d8-3f3195eb9e98
 # ╠═590e843d-5881-4e41-aab8-3c4ef6bc83bc
