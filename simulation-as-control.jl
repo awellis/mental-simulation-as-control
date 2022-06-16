@@ -111,8 +111,6 @@ md"""
 # ╔═╡ 147b95f9-903e-440e-92a4-f59a9f5897e8
 md"""
 Let's consider a simple agent that can move (change its position) along a unidimensional axis. We will denote the position at time $t$ by $θ_t$.
-
-The agent can move (left/right) by applying a force. Neglecting pretty much everything else (mass, friction, etc.), the applied force results in a single cycle sinusiodal acceleration.
 """
 
 # ╔═╡ bd29c3c5-8678-493c-b7ca-1209461d9941
@@ -123,20 +121,50 @@ md"""
 The agent is equipped with a GPS device, with which it can measure its position along the axis. However, the measurements are noisy, such that the observation a time $t$ is given by:
 
 $$y_t \sim \mathcal{N}(\theta_{t}, \sigma^2_y)$$
+"""
 
+# ╔═╡ 93b6a338-4222-4f1c-a61f-4ae3c53a3569
+md"""
+The agent can move (left/right) by applying a force. Neglecting pretty much everything else (mass, friction, etc.), the applied force results in a single cycle sinusiodal acceleration. 
+
+Therefore, the agent's motor action will result in an acceleration. We know that acceleration, $\alpha$, is the second derivative of position. We can therefore numerically integrate (twice) the acceleration over a time period to obtain the velocity, $\omega$, and then the position.
+
+$$\begin{align}
+\omega_t &=  \dot{θ}_t\\
+\alpha_t &= \dot{\omega}_t = \ddot{\theta}_t = u_t\\
+r_{t+1} &= r_t + c \, i_t
+\end{align}$$
+"""
+
+# ╔═╡ 51799b48-ab66-49f6-b675-11d2f556f1b2
+md"""
+
+Using this information, we can write the agent's motion as a system of 1st order difference equations. These implement Newtonian kinematics.
+
+$$\begin{align}
+ u_t &= \alpha_t \\
+\alpha_t &= D \cdot A  \cdot sin(2 * π * f * (t-\phi)) \\
+\omega_{t+1} &= \omega_{t} + \Delta t \cdot \alpha_t \\
+\theta_{t+1} &= \theta_{t} + \Delta t \cdot \omega_{t} + \frac{1}{2} \Delta t ^2 \cdot \alpha_t \\
+
+\end{align}$$
+"""
+
+# ╔═╡ d62199a4-c460-484f-9793-b49af77b15bb
+md"""
+We are assuming that the agent can only perform one type of motion (sinusiodal acceleration), and has perfect knowledge of the form of the acceleration. Further, the acceleration is parameterized using $D$, $A$, $\phi$. $f$ is set to $1$ because the agent's motor system can only perform a single cycle.
+"""
+
+# ╔═╡ db19811e-6680-4c7e-98d8-652b4d35214a
+md"""
+Let's try this out using a code example. You can use the sliders to set the amplitude and direction.
 """
 
 # ╔═╡ 6d343fb0-0eb5-43e7-ae6b-34c62a7da084
 amplitude = @bind amplitude PlutoUI.Slider(0:20, default = 10)
 
-# ╔═╡ df7ab325-d9ff-4bf7-9bad-d21bd6085305
-fun = @bind fun Select([sin, cos])
-
 # ╔═╡ 50159681-0c1c-4961-8318-d84ab7e95fce
 direction = @bind direction Select(["left", "right"])
-
-# ╔═╡ 57bea528-1106-4935-bfd3-c96426b39e15
-mu = PlannedHeadTurn(A=amplitude, D=direction, onset=0.5, duration=1.0);
 
 # ╔═╡ 2983a87e-7c52-447a-bbeb-3baeed09e611
 show_observations = @bind show_observations CheckBox()
@@ -163,20 +191,20 @@ begin
 	
 	function acceleration(D::Number, A::Number, 
 		f::Number, t::Number, start::Number)
-		D * A * si.(2*π*f*(t-start))
+		D * A * sin.(2 * π * f * (t-start))
 	end
 	
 end
 
+# ╔═╡ 57bea528-1106-4935-bfd3-c96426b39e15
+mu = PlannedMovement(A=amplitude, D=direction, onset=0.5, duration=1.0);
+
 # ╔═╡ 9ea6db4d-8859-4bb3-86eb-b16d91178dec
-sensor = Sensor(noise=Normal(0, 0.5));
+sensor = Sensor(noise=Normal(0, 1.0));
 
 # ╔═╡ 832c29eb-49b1-41d4-98e7-960fb30ed9a1
 begin
-	function simulate(mᵤ::PlannedHeadTurn,
-    sensor::Sensor;
-    Δt = 0.01,
-    duration::Real = 2)
+	function simulate(mᵤ::PlannedMovement, sensor::Sensor; Δt = 0.01, duration::Real = 2)
 		
     onsetᵤ = mᵤ.onset
     @assert onsetᵤ >= 0
@@ -193,7 +221,7 @@ begin
     A =mᵤ.A 
 
     noise = sensor.noise
-    f = 1/(motion_duration) # frequency: single sinusoidal head turn
+    f = 1/(motion_duration) # frequency: single cycle sinusoidal 
 
     timesteps = range(0, stop = total_duration, step = Δt)
     T = length(timesteps)
@@ -208,7 +236,7 @@ begin
         α[i] = (t > onsetᵤ) & (t < onsetᵤ + motion_duration) ? acceleration(D, A, f, t, onsetᵤ) : 0
         ω[i] = ω[i-1] + Δt * α[i]
         θ[i] = θ[i-1] + Δt * ω[i] + 1/2 * Δt^2 * α[i]
-        y[i] = ω[i] + rand(noise)
+        y[i] = θ[i] + rand(noise)
     end
     
     out = (timesteps = collect(timesteps),
@@ -225,7 +253,7 @@ end
 end
 
 # ╔═╡ bb7be262-3487-4130-ab9c-8d1d46c51c3f
-s = simulate(mu, sensor, Δt=0.01, duration=2);
+s = simulate(mu, sensor, Δt=0.01, duration=2)
 
 # ╔═╡ 9a641cd1-f031-4dc9-837f-e9e69a13566d
 md"""
@@ -261,28 +289,33 @@ end
 
 # ╔═╡ b0adc44e-8e3f-4f9e-b183-c943fd122c69
 begin
-	f1 = with_theme(publication_theme()) do
-    lines(s.timesteps, s.α,
+	with_theme(publication_theme()) do
+    f1 = lines(s.timesteps, s.α,
         linewidth=3,
-        color="black",
+        color=:black,
 		linestyle=:dash,
+		label = "Acceleration",
         axis=(xticks=LinearTicks(6),
             xlabel="Tieme (s)",
-            ylabel="Angular velocity (deg/s)",
+            ylabel="Position (arbitrary units)",
             xgridstyle=:dash, ygridstyle=:dash))
-	lines!(s.timesteps, s.ω,
+	f2 = lines!(s.timesteps, s.ω,
         linewidth=6,
-        color="darkorange")	
-	lines!(s.timesteps, s.θ,
+        color=:darkorange,
+	label = "Velocity")	
+	f3 = lines!(s.timesteps, s.θ,
         linewidth=6,
-        color="blue",
-	    linestyle=:solid)	
-	show_observations && scatter!(s.timesteps, s.y,
-	        color=(:black),
+        color=:steelblue3,
+	    linestyle=:solid,
+	label = "Position")	
+	f4 = show_observations && scatter!(s.timesteps, s.y,
+	        color=(:steelblue3),
 			marker='◆',
-        	markersize=6)
+        	markersize=6,
+	label = "Observations")
 	vspan!([0, mu.onset + mu.duration], [mu.onset, maximum(s.timesteps)],color = [(c, 0.2) for c in [:grey, :grey]])
     ylims!(minimum(s.α) - 1, maximum(s.α) + 1)
+	axislegend()
     current_figure()
 end
 end
@@ -292,11 +325,10 @@ note(text) = Markdown.MD(Markdown.Admonition("note", "Note", [text]))
 
 # ╔═╡ d9f6f38e-0a10-411e-abf7-64fc75277963
 note(md"""
-You should **not** normally attempt to write a numerical optimizer for yourself. Entire generations of Applied Mathematicians and other numerical pro's have worked on those topics before you, so you should use their work:
+The agents observations are of course a model of a sensory system.""")
 
-    1. Any optimizer you could come up with is probably going to perform below par, and be highly likely to contain mistakes.
-    2. Don't reinvent the wheel.
-That said, it's very important that we understand some basics about the main algorithms, because your task is **to choose from the wide array of available ones**.""")
+# ╔═╡ eeb33ece-3f14-4bd8-b36d-0a7492e49184
+note(md"""If the agent is able to numerically integrate its acceleration, it can work out its position.""")
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -1574,10 +1606,14 @@ version = "3.5.0+0"
 # ╟─54513b17-f40a-4948-abfa-ff13e5fdc48b
 # ╟─147b95f9-903e-440e-92a4-f59a9f5897e8
 # ╟─bd29c3c5-8678-493c-b7ca-1209461d9941
-# ╠═f29282a5-8f30-4759-9481-cf1153b91262
-# ╠═d9f6f38e-0a10-411e-abf7-64fc75277963
+# ╟─f29282a5-8f30-4759-9481-cf1153b91262
+# ╟─d9f6f38e-0a10-411e-abf7-64fc75277963
+# ╟─93b6a338-4222-4f1c-a61f-4ae3c53a3569
+# ╠═51799b48-ab66-49f6-b675-11d2f556f1b2
+# ╟─d62199a4-c460-484f-9793-b49af77b15bb
+# ╟─eeb33ece-3f14-4bd8-b36d-0a7492e49184
+# ╟─db19811e-6680-4c7e-98d8-652b4d35214a
 # ╟─6d343fb0-0eb5-43e7-ae6b-34c62a7da084
-# ╠═df7ab325-d9ff-4bf7-9bad-d21bd6085305
 # ╟─50159681-0c1c-4961-8318-d84ab7e95fce
 # ╠═57bea528-1106-4935-bfd3-c96426b39e15
 # ╠═9ea6db4d-8859-4bb3-86eb-b16d91178dec
