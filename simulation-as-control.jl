@@ -375,31 +375,6 @@ end
     end
 end
 
-# ╔═╡ 6552ba4c-2c95-46d4-b5f6-b8098792fda0
-
-function makemotionmodel(s; σωu=0.05, σωe=0.1)
-    y = s.y
-    N = length(y)
-    Du = s.mᵤ.D == "left" ? -1 : 1
-    Au = s.mᵤ.A
-    σy = s.sensor.σ
-    Δt = s.Δt
-    duration_u = s.mᵤ.duration
-    onsetᵤ = s.mᵤ.onset
-    timesteps = range(0, stop=N * Δt, step=Δt)
-    fu = 1 / (duration_u)
-
-    u = zeros(N)
-    for i ∈ 2:N
-        t = timesteps[i]
-        u[i] = (t >= onsetᵤ) && (t <= onsetᵤ + duration_u) ? acceleration(Du, Au, fu, t, onsetᵤ) : 0.0
-    end
-	
-    model = motionmodel(y, N, u=u, σω=σω, σy=σy, Δt=Δt, κ1=κ1, κ2=κ2)
-end
-
-
-
 # ╔═╡ 324042ac-79cb-46a0-af2f-8db16e6bf717
 begin
 	function get_estimates(chain::Chains, var::Symbol)
@@ -429,20 +404,10 @@ end
 
 # ╔═╡ 2bf1a8ef-16f0-4da7-9766-e58455df7e83
 begin
-
-	marker='◆'
-	# marker=:hline
-
 	plt = data(dd) *
-    #  	visual(Lines, color = :steelblue3, linewidth = 0.2, alpha = 0.1) *
-    # #  visual(Scatter, color = :steelblue3, 
-    # #         markersize=2,  marker=marker, alpha = 0.1) *
-     visual(ScatterLines,
-            color = :steelblue3, linewidth = 0.2, alpha = 0.05,
-            markersize=2,  marker=marker) *
-     mapping(:time, :θ) *
-    mapping(group=:iteration)
-
+		visual(Lines, color = :steelblue3, linewidth = 0.2, alpha = 0.1) *
+     	mapping(:time, :θ, group=:iteration)
+	
 	fig2 = draw(plt)
 	
 	μθ, lbθ, ubθ = compute_stats(θ)
@@ -2301,7 +2266,6 @@ version = "3.5.0+0"
 # ╠═832c29eb-49b1-41d4-98e7-960fb30ed9a1
 # ╠═60af8174-7968-458f-9028-c2b80697e60c
 # ╠═bb226991-1eec-44f1-a4eb-dbcd9126e6e7
-# ╠═6552ba4c-2c95-46d4-b5f6-b8098792fda0
 # ╠═324042ac-79cb-46a0-af2f-8db16e6bf717
 # ╠═17d59070-ab0e-4c96-97d0-26a000723ec9
 # ╟─9a641cd1-f031-4dc9-837f-e9e69a13566d
