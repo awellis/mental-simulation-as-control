@@ -15,16 +15,16 @@ macro bind(def, element)
 end
 
 # ╔═╡ 1b9aeb61-3534-4363-8e27-e7c9df717480
-using Distributions, PlutoUI, ImageIO, ImageShow
+using Distributions, PlutoUI, DataFrames
 
 # ╔═╡ 67d453be-1c76-4f2d-8660-76e5339f0953
 using AlgebraOfGraphics, CairoMakie
 
+# ╔═╡ dfb8573e-0617-4636-b16b-7f1e0270b0bd
+using Turing
+
 # ╔═╡ 45d7f55a-35de-47f6-9ce5-67fbbdeabaf3
 using Base: @kwdef
-
-# ╔═╡ 4c501aac-0b98-43fa-8601-38d51b075150
-using Turing
 
 # ╔═╡ fde7f730-eca3-11ec-11fd-a3669efbfb62
 md"# Simulation as a control problem"
@@ -303,6 +303,157 @@ end
 # ╔═╡ bb7be262-3487-4130-ab9c-8d1d46c51c3f
 s = simulate(mu, sensor, Δt=0.01, duration=onset+duration+2);
 
+# ╔═╡ 60af8174-7968-458f-9028-c2b80697e60c
+@model function infermotion(y, N; u, σω, σθ, σy, Δt)
+    ω = tzeros(Real, N)
+	θ = tzeros(Real, N)
+
+    ω[1] ~ Normal(0, σω)
+	θ[1] ~ Normal(0, σθ)
+    y[1] ~ Normal(θ[1], σy)
+
+    for i ∈ 2:N
+        ω[i] ~ Normal(ω[i-1] + Δt * u[i], σω)
+        θ[i] ~ Normal(θ[i-1] + Δt * ω[i-1] + 0.5 * Δt^2 * u[i], σθ)
+        y[i] ~ Normal(θ[i], σy)
+    end
+end
+
+# ╔═╡ 50fe5674-cbde-4443-b3d9-4cc42beb59dd
+begin 
+	N = length(s.y)
+    D = s.mᵤ.D == "left" ? -1 : 1
+	
+	σω = 0.05
+	σθ = 0.05
+	
+    timesteps = range(0, stop=N * s.Δt, step=s.Δt)
+    f = 1 / (duration)
+    u = zeros(N)
+    for i ∈ 2:N
+        t = timesteps[i]
+        u[i] = (t >= s.mᵤ.onset) && (t <= s.mᵤ.onset + s.mᵤ.duration) ? acceleration(D, s.mᵤ.A, f, t, s.mᵤ.onset) : 0.0
+    end
+	
+	forwardmodel = infermotion(s.y, N, u=u, σω=σω, σθ=σθ, σy=s.sensor.σ, Δt=s.Δt)	
+	posterior = sample(forwardmodel, SMC(), 1000);
+end
+
+# ╔═╡ a3dcdc7d-4298-458f-ab7c-5a3ee55dd7fd
+begin
+	using Query
+	d = DataFrame(group(posterior, :θ))
+	select!(d, Not(:chain))
+	colnames = vcat(:iteration, ["$i" for i in 1:ncol(d)-1])
+	rename!(d, Symbol.(colnames))
+
+	nsamples = 500
+	dd = d[sample(axes(d, 1), nsamples; replace=false, ordered=true), :]
+
+	dd = DataFrames.stack(dd, Not([:iteration]),
+    	variable_name=:time, value_name=:ω)
+
+	dd = dd |>
+    @mutate(time = parse(Int64, _.time),
+            iteration = string.(_.iteration)) |>
+    @mutate(time = _.time*s.Δt) |> 
+    DataFrame
+
+end
+
+# ╔═╡ 2bf1a8ef-16f0-4da7-9766-e58455df7e83
+begin
+
+	marker='◆'
+	# marker=:hline
+
+	plt = data(dd) *
+     	visual(Lines, color = :steelblue3, linewidth = 0.2, alpha = 0.1) *
+    #  visual(Scatter, color = :steelblue3, 
+    #         markersize=2,  marker=marker, alpha = 0.1) *
+    #  visual(ScatterLines,
+    #         color = :steelblue3, linewidth = 0.2, alpha = 0.1,
+    #         markersize=2,  marker=marker) *
+     mapping(:time, :ω) *
+     mapping(group=:iteration)
+
+	fig2 = draw(plt)
+
+	lines!(s.timesteps, μθ, 
+        linewidth=1,
+        linestyle = :dash,
+        color=:steelblue4)
+	current_figure()
+end
+
+# ╔═╡ bb226991-1eec-44f1-a4eb-dbcd9126e6e7
+@model function inferparams(y, θ_desired, N; u, σω, σθ, σy, Δt)
+    ω = tzeros(Real, N)
+	θ = tzeros(Real, N)
+
+    ω[1] ~ Normal(0, σω)
+	θ[1] ~ Normal(0, σθ)
+    y[1] ~ Normal(θ[1], σy)
+
+    for i ∈ 2:N
+        ω[i] ~ Normal(ω[i-1] + Δt * u[i], σω)
+        θ[i] = Normal(θ[i-1] + Δt * ω[i-1] + 0.5 * Δt^2 * u[i], σθ)
+        y[i] ~ Normal(θ[i], σy)
+    end
+end
+
+# ╔═╡ 6552ba4c-2c95-46d4-b5f6-b8098792fda0
+
+function makemotionmodel(s; σωu=0.05, σωe=0.1)
+    y = s.y
+    N = length(y)
+    Du = s.mᵤ.D == "left" ? -1 : 1
+    Au = s.mᵤ.A
+    σy = s.sensor.σ
+    Δt = s.Δt
+    duration_u = s.mᵤ.duration
+    onsetᵤ = s.mᵤ.onset
+    timesteps = range(0, stop=N * Δt, step=Δt)
+    fu = 1 / (duration_u)
+
+    u = zeros(N)
+    for i ∈ 2:N
+        t = timesteps[i]
+        u[i] = (t >= onsetᵤ) && (t <= onsetᵤ + duration_u) ? acceleration(Du, Au, fu, t, onsetᵤ) : 0.0
+    end
+	
+    model = motionmodel(y, N, u=u, σω=σω, σy=σy, Δt=Δt, κ1=κ1, κ2=κ2)
+end
+
+
+
+# ╔═╡ 324042ac-79cb-46a0-af2f-8db16e6bf717
+begin
+	function get_estimates(chain::Chains, var::Symbol)
+    	x = Array(group(chain, var))
+    	return (var=x)
+	end
+end
+
+# ╔═╡ 3c0cc555-3670-4ce5-a6b8-bea14cbc06fc
+θ = get_estimates(posterior, :θ);
+
+# ╔═╡ df45ae13-8625-40fc-9520-322a47eb4855
+ω = get_estimates(posterior, :ω);
+
+# ╔═╡ 17d59070-ab0e-4c96-97d0-26a000723ec9
+begin
+	q025(x) = quantile(x, 0.025)
+	q975(x) = quantile(x, 0.97)
+	
+	function compute_stats(x::Array)
+    mean_x = mean.(eachslice(x, dims=2))
+    xlb = mean_x .- q025.(eachslice(x, dims=2))
+    xub = mean_x .- q975.(eachslice(x, dims=2))
+    return (μ=mean_x, lb=xlb, ub=xub)
+	end
+end
+
 # ╔═╡ 9a641cd1-f031-4dc9-837f-e9e69a13566d
 md"""
 
@@ -368,6 +519,30 @@ begin
 end
 end
 
+# ╔═╡ 02d3cd9d-3c53-49e2-882c-056f3225bb27
+begin
+	fig1 = with_theme(publication_theme()) do
+    μθ, lbθ, ubθ = compute_stats(θ)
+    μω, lbω, ubω = compute_stats(ω)
+
+    lines(s.timesteps, μω,
+        linewidth=4,
+        color="darkorange",
+        axis=(xticks=LinearTicks(6),
+            xlabel="Time (s)",
+            ylabel="Inferred position/velocity",
+            xgridstyle=:dash, ygridstyle=:dash))
+    lines!(s.timesteps, μθ,
+        linewidth=4,
+        color=:steelblue3)
+    band!(s.timesteps, μω - lbω, μω - ubω, color=(:darkorange, 0.5))
+    band!(s.timesteps, μθ - lbθ, μθ - ubθ, color=(:steelblue3, 0.5))
+    lines!(s.timesteps, s.θ, linewidth=4, linestyle=:dash, color=:black)
+    current_figure()
+end
+
+end
+
 # ╔═╡ a83e98d0-1275-437e-947d-d14613432253
 note(text) = Markdown.MD(Markdown.Admonition("note", "Note", [text]))
 
@@ -385,19 +560,19 @@ PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
 AlgebraOfGraphics = "cbdf2221-f076-402e-a563-3d30da359d67"
 CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
+DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
-ImageIO = "82e4d734-157c-48bb-816b-45c225c6df19"
-ImageShow = "4e3cecfd-b093-5904-9786-8bbb286a6a31"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
+Query = "1a8c2f83-1ff3-5112-b086-8aa67b057ba1"
 Turing = "fce5fe82-541a-59a6-adf8-730c64b5f9a0"
 
 [compat]
 AlgebraOfGraphics = "~0.6.8"
 CairoMakie = "~0.8.5"
+DataFrames = "~1.3.4"
 Distributions = "~0.25.62"
-ImageIO = "~0.6.5"
-ImageShow = "~0.3.6"
 PlutoUI = "~0.7.39"
+Query = "~1.0.0"
 Turing = "~0.21.5"
 """
 
@@ -407,7 +582,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.8.0-rc1"
 manifest_format = "2.0"
-project_hash = "f1fb22518b5fffb6e6663eb6d5ef96eb8717a30a"
+project_hash = "3ff651872faed614d6d025ae602813fee83a77e3"
 
 [[deps.AbstractFFTs]]
 deps = ["ChainRulesCore", "LinearAlgebra"]
@@ -691,6 +866,12 @@ git-tree-sha1 = "fb5f5316dd3fd4c5e7c30a24d50643b73e37cd40"
 uuid = "9a962f9c-6df0-11e9-0e5d-c546b8b5ee8a"
 version = "1.10.0"
 
+[[deps.DataFrames]]
+deps = ["Compat", "DataAPI", "Future", "InvertedIndices", "IteratorInterfaceExtensions", "LinearAlgebra", "Markdown", "Missings", "PooledArrays", "PrettyTables", "Printf", "REPL", "Reexport", "SortingAlgorithms", "Statistics", "TableTraits", "Tables", "Unicode"]
+git-tree-sha1 = "daa21eb85147f72e41f6352a57fccea377e310a9"
+uuid = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+version = "1.3.4"
+
 [[deps.DataStructures]]
 deps = ["Compat", "InteractiveUtils", "OrderedCollections"]
 git-tree-sha1 = "d1fff3a548102f48987a52a2e0d114fa97d730f0"
@@ -701,6 +882,12 @@ version = "0.18.13"
 git-tree-sha1 = "bfc1187b79289637fa0ef6d4436ebdfe6905cbd6"
 uuid = "e2d170a0-9d28-54be-80f0-106bbe20a464"
 version = "1.0.0"
+
+[[deps.DataValues]]
+deps = ["DataValueInterfaces", "Dates"]
+git-tree-sha1 = "d88a19299eba280a6d062e135a43f00323ae70bf"
+uuid = "e7dc6d0d-1eca-5fa6-8ad6-5aecde8b7ea5"
+version = "0.4.13"
 
 [[deps.Dates]]
 deps = ["Printf"]
@@ -1002,12 +1189,6 @@ git-tree-sha1 = "debdd00ffef04665ccbb3e150747a77560e8fad1"
 uuid = "615f187c-cbe4-4ef1-ba3b-2fcf58d6d173"
 version = "0.1.1"
 
-[[deps.ImageBase]]
-deps = ["ImageCore", "Reexport"]
-git-tree-sha1 = "b51bb8cae22c66d0f6357e3bcb6363145ef20835"
-uuid = "c817782e-172a-44cc-b673-b171935fbb9e"
-version = "0.1.5"
-
 [[deps.ImageCore]]
 deps = ["AbstractFFTs", "ColorVectorSpace", "Colors", "FixedPointNumbers", "Graphics", "MappedArrays", "MosaicViews", "OffsetArrays", "PaddedViews", "Reexport"]
 git-tree-sha1 = "9a5c62f231e5bba35695a20988fc7cd6de7eeb5a"
@@ -1019,12 +1200,6 @@ deps = ["FileIO", "IndirectArrays", "JpegTurbo", "LazyModules", "Netpbm", "OpenE
 git-tree-sha1 = "d9a03ffc2f6650bd4c831b285637929d99a4efb5"
 uuid = "82e4d734-157c-48bb-816b-45c225c6df19"
 version = "0.6.5"
-
-[[deps.ImageShow]]
-deps = ["Base64", "FileIO", "ImageBase", "ImageCore", "OffsetArrays", "StackViews"]
-git-tree-sha1 = "b563cf9ae75a635592fc73d3eb78b86220e55bd8"
-uuid = "4e3cecfd-b093-5904-9786-8bbb286a6a31"
-version = "0.3.6"
 
 [[deps.Imath_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -1106,6 +1281,12 @@ version = "0.1.1"
 git-tree-sha1 = "fa6287a4469f5e048d763df38279ee729fbd44e5"
 uuid = "c8e1da08-722c-5040-9ed9-7db0dc04731e"
 version = "1.4.0"
+
+[[deps.IterableTables]]
+deps = ["DataValues", "IteratorInterfaceExtensions", "Requires", "TableTraits", "TableTraitsUtils"]
+git-tree-sha1 = "70300b876b2cebde43ebc0df42bc8c94a144e1b4"
+uuid = "1c8ee90f-4401-5389-894e-7a04a3dc0f4d"
+version = "1.0.0"
 
 [[deps.IteratorInterfaceExtensions]]
 git-tree-sha1 = "a3f24677c21f5bbe9d2a714f95dcd58337fb2856"
@@ -1588,6 +1769,18 @@ git-tree-sha1 = "78aadffb3efd2155af139781b8a8df1ef279ea39"
 uuid = "1fd47b50-473d-5c70-9696-f719f8f3bcdc"
 version = "2.4.2"
 
+[[deps.Query]]
+deps = ["DataValues", "IterableTables", "MacroTools", "QueryOperators", "Statistics"]
+git-tree-sha1 = "a66aa7ca6f5c29f0e303ccef5c8bd55067df9bbe"
+uuid = "1a8c2f83-1ff3-5112-b086-8aa67b057ba1"
+version = "1.0.0"
+
+[[deps.QueryOperators]]
+deps = ["DataStructures", "DataValues", "IteratorInterfaceExtensions", "TableShowUtils"]
+git-tree-sha1 = "911c64c204e7ecabfd1872eb93c49b4e7c701f02"
+uuid = "2aef5ad7-51ca-5a8f-8e88-e75cf067b44b"
+version = "0.9.3"
+
 [[deps.REPL]]
 deps = ["InteractiveUtils", "Markdown", "Sockets", "Unicode"]
 uuid = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
@@ -1819,11 +2012,23 @@ deps = ["Dates"]
 uuid = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
 version = "1.0.0"
 
+[[deps.TableShowUtils]]
+deps = ["DataValues", "Dates", "JSON", "Markdown", "Test"]
+git-tree-sha1 = "14c54e1e96431fb87f0d2f5983f090f1b9d06457"
+uuid = "5e66a065-1f0a-5976-b372-e0b8c017ca10"
+version = "0.2.5"
+
 [[deps.TableTraits]]
 deps = ["IteratorInterfaceExtensions"]
 git-tree-sha1 = "c06b2f539df1c6efa794486abfb6ed2022561a39"
 uuid = "3783bdb8-4a98-5b6b-af9a-565f29a5fe9c"
 version = "1.0.1"
+
+[[deps.TableTraitsUtils]]
+deps = ["DataValues", "IteratorInterfaceExtensions", "Missings", "TableTraits"]
+git-tree-sha1 = "78fecfe140d7abb480b53a44f3f85b6aa373c293"
+uuid = "382cd787-c1b6-5bf2-a167-d5b971a19bda"
+version = "1.0.2"
 
 [[deps.Tables]]
 deps = ["DataAPI", "DataValueInterfaces", "IteratorInterfaceExtensions", "LinearAlgebra", "OrderedCollections", "TableTraits", "Test"]
@@ -2055,6 +2260,7 @@ version = "3.5.0+0"
 # ╔═╡ Cell order:
 # ╠═1b9aeb61-3534-4363-8e27-e7c9df717480
 # ╠═67d453be-1c76-4f2d-8660-76e5339f0953
+# ╠═dfb8573e-0617-4636-b16b-7f1e0270b0bd
 # ╠═45d7f55a-35de-47f6-9ce5-67fbbdeabaf3
 # ╟─fde7f730-eca3-11ec-11fd-a3669efbfb62
 # ╟─9e4cf0fc-6654-4123-993e-39aa714b3731
@@ -2084,11 +2290,21 @@ version = "3.5.0+0"
 # ╟─37079a26-df04-4de9-b2b2-4f2504a21ba7
 # ╟─c6b44155-bd04-45dd-bba6-9b85a79d2487
 # ╟─ec74d6c2-e223-41cd-b1f7-3e6a6945d829
-# ╠═4c501aac-0b98-43fa-8601-38d51b075150
 # ╟─73a771b4-ad0f-4c64-bfb7-38aba7dc90f2
+# ╠═50fe5674-cbde-4443-b3d9-4cc42beb59dd
+# ╠═3c0cc555-3670-4ce5-a6b8-bea14cbc06fc
+# ╠═df45ae13-8625-40fc-9520-322a47eb4855
+# ╟─02d3cd9d-3c53-49e2-882c-056f3225bb27
+# ╠═a3dcdc7d-4298-458f-ab7c-5a3ee55dd7fd
+# ╠═2bf1a8ef-16f0-4da7-9766-e58455df7e83
 # ╟─b1161fc7-7779-44ec-a570-b335b3ba9745
 # ╠═10e1593e-0216-45e6-9c36-206e54848f67
 # ╠═832c29eb-49b1-41d4-98e7-960fb30ed9a1
+# ╠═60af8174-7968-458f-9028-c2b80697e60c
+# ╠═bb226991-1eec-44f1-a4eb-dbcd9126e6e7
+# ╠═6552ba4c-2c95-46d4-b5f6-b8098792fda0
+# ╠═324042ac-79cb-46a0-af2f-8db16e6bf717
+# ╠═17d59070-ab0e-4c96-97d0-26a000723ec9
 # ╟─9a641cd1-f031-4dc9-837f-e9e69a13566d
 # ╠═2c12b0de-ed33-44b0-88d8-3f3195eb9e98
 # ╠═590e843d-5881-4e41-aab8-3c4ef6bc83bc
