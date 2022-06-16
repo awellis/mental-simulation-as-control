@@ -154,7 +154,7 @@ where $D$, $A$, $\phi$ are the direction (sign), amplitude and phase, i.e. param
 
 # ╔═╡ db19811e-6680-4c7e-98d8-652b4d35214a
 md"""
-Let's try this out using a code example. You can use the sliders to set the amplitude and direction.
+Let's try this out using a code example. You can use the sliders to set the amplitude, direction, onset and duration of motion.
 """
 
 # ╔═╡ 6d343fb0-0eb5-43e7-ae6b-34c62a7da084
@@ -169,8 +169,29 @@ duration = @bind duration PlutoUI.Slider(1:6, default = 2)
 # ╔═╡ f6fc7de8-db7b-4861-b045-b385f2ad97d5
 onset = @bind onset PlutoUI.Slider(1:duration, default = 0.5)
 
+# ╔═╡ 46a0daaa-ace4-4ecb-8ff1-09a88b634a1c
+md"""
+Now we can simulate the result of applying an acceleration with the parameters defined above, and plot the resulting velocity, position and sensory observations.
+"""
+
 # ╔═╡ 2983a87e-7c52-447a-bbeb-3baeed09e611
 show_observations = @bind show_observations CheckBox()
+
+# ╔═╡ a7e2c25e-7b06-41a9-903f-65396ca1c09e
+md"""
+## Control 
+
+What we did above was use the model to perform a forward simulation of the expected consequences of applying a motor command. The problem of controlling, i.e. selecting an appropriate action, is the inverse problem: in this case, figuring out which parameter settings to use in order to achieve a desired target position.
+
+Say, for example, that the agent wishes to go to position $\theta = 10$. For simplicity, let's assume that the agent doens't care how long it takes to get there.
+
+
+The problem can be construed in serveral ways. I propose that we either look at it as an optimization problem, or as a problem of Bayesian inference.
+
+
+
+
+"""
 
 # ╔═╡ b1161fc7-7779-44ec-a570-b335b3ba9745
 md"""
@@ -256,7 +277,7 @@ end
 end
 
 # ╔═╡ bb7be262-3487-4130-ab9c-8d1d46c51c3f
-s = simulate(mu, sensor, Δt=0.01, duration=onset+duration+2)
+s = simulate(mu, sensor, Δt=0.01, duration=onset+duration+2);
 
 # ╔═╡ 9a641cd1-f031-4dc9-837f-e9e69a13566d
 md"""
@@ -328,7 +349,7 @@ note(text) = Markdown.MD(Markdown.Admonition("note", "Note", [text]))
 
 # ╔═╡ d9f6f38e-0a10-411e-abf7-64fc75277963
 note(md"""
-The agent's observations are of course a model of a sensory system.""")
+The agent's observations are of course a model of a sensory system. We are assuming that the sensor noise is homoscedastic.""")
 
 # ╔═╡ d62199a4-c460-484f-9793-b49af77b15bb
 note(md"""
@@ -1621,11 +1642,13 @@ version = "3.5.0+0"
 # ╠═50159681-0c1c-4961-8318-d84ab7e95fce
 # ╟─43165e68-2265-4bf9-8f19-0dea04f29cfb
 # ╠═f6fc7de8-db7b-4861-b045-b385f2ad97d5
+# ╟─46a0daaa-ace4-4ecb-8ff1-09a88b634a1c
 # ╠═57bea528-1106-4935-bfd3-c96426b39e15
 # ╠═9ea6db4d-8859-4bb3-86eb-b16d91178dec
 # ╠═bb7be262-3487-4130-ab9c-8d1d46c51c3f
 # ╟─2983a87e-7c52-447a-bbeb-3baeed09e611
-# ╠═b0adc44e-8e3f-4f9e-b183-c943fd122c69
+# ╟─b0adc44e-8e3f-4f9e-b183-c943fd122c69
+# ╠═a7e2c25e-7b06-41a9-903f-65396ca1c09e
 # ╟─b1161fc7-7779-44ec-a570-b335b3ba9745
 # ╠═10e1593e-0216-45e6-9c36-206e54848f67
 # ╠═832c29eb-49b1-41d4-98e7-960fb30ed9a1
