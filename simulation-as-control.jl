@@ -253,6 +253,8 @@ begin
 	        color=(:black),
 			marker='◆',
         	markersize=6)
+	vspan!([0, 0.3, 1], [0.2, 0.4, 1],
+    color = [(c, 0.2) for c in [:red, :orange, :pink]])
     ylims!(minimum(s.α) - 1, maximum(s.α) + 1)
     current_figure()
 end
@@ -1526,7 +1528,7 @@ version = "3.5.0+0"
 # ╠═9ea6db4d-8859-4bb3-86eb-b16d91178dec
 # ╠═bb7be262-3487-4130-ab9c-8d1d46c51c3f
 # ╟─2983a87e-7c52-447a-bbeb-3baeed09e611
-# ╟─b0adc44e-8e3f-4f9e-b183-c943fd122c69
+# ╠═b0adc44e-8e3f-4f9e-b183-c943fd122c69
 # ╟─9a641cd1-f031-4dc9-837f-e9e69a13566d
 # ╠═2c12b0de-ed33-44b0-88d8-3f3195eb9e98
 # ╠═590e843d-5881-4e41-aab8-3c4ef6bc83bc
