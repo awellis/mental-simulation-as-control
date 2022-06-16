@@ -25,3 +25,4 @@ Manifest.toml
 numerical-approximation.jl
 control_presentation.jl
 pluto-demo.jl
+demo-notebook.jl

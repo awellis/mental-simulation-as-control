@@ -15,7 +15,7 @@ macro bind(def, element)
 end
 
 # ╔═╡ 1b9aeb61-3534-4363-8e27-e7c9df717480
-using Distributions, PlutoUI
+using Distributions, PlutoUI, ImageIO, ImageShow
 
 # ╔═╡ 67d453be-1c76-4f2d-8660-76e5339f0953
 using AlgebraOfGraphics, CairoMakie
@@ -109,7 +109,22 @@ md"""
 """
 
 # ╔═╡ 147b95f9-903e-440e-92a4-f59a9f5897e8
+md"""
+Let's consider a simple agent that can move (change its position) along a unidimensional axis. We will denote the position at time $t$ by $θ_t$.
 
+The agent can move (left/right) by applying a force. Neglecting pretty much everything else (mass, friction, etc.), the applied force results in a single cycle sinusiodal acceleration.
+"""
+
+# ╔═╡ bd29c3c5-8678-493c-b7ca-1209461d9941
+PlutoUI.LocalResource("assets/bear-with-phone.png")
+
+# ╔═╡ f29282a5-8f30-4759-9481-cf1153b91262
+md"""
+The agent is equipped with a GPS device, with which it can measure its position along the axis. However, the measurements are noisy, such that the observation a time $t$ is given by:
+
+$$y_t \sim \mathcal{N}(\theta_{t}, \sigma^2_y)$$
+
+"""
 
 # ╔═╡ 6d343fb0-0eb5-43e7-ae6b-34c62a7da084
 amplitude = @bind amplitude PlutoUI.Slider(0:20, default = 10)
@@ -119,6 +134,9 @@ fun = @bind fun Select([sin, cos])
 
 # ╔═╡ 50159681-0c1c-4961-8318-d84ab7e95fce
 direction = @bind direction Select(["left", "right"])
+
+# ╔═╡ 57bea528-1106-4935-bfd3-c96426b39e15
+mu = PlannedHeadTurn(A=amplitude, D=direction, onset=0.5, duration=1.0);
 
 # ╔═╡ 2983a87e-7c52-447a-bbeb-3baeed09e611
 show_observations = @bind show_observations CheckBox()
@@ -136,7 +154,7 @@ begin
     noise::Distribution = Normal(0, 1.0)
 	end
 
-	@kwdef struct PlannedHeadTurn
+	@kwdef struct PlannedMovement
     A::Real = 20 # amplitude
     D::String = "right" # direction
     onset::Real = 1
@@ -145,13 +163,10 @@ begin
 	
 	function acceleration(D::Number, A::Number, 
 		f::Number, t::Number, start::Number)
-		D * A * sin.(2*π*f*(t-start))
+		D * A * si.(2*π*f*(t-start))
 	end
 	
 end
-
-# ╔═╡ 57bea528-1106-4935-bfd3-c96426b39e15
-mu = PlannedHeadTurn(A=amplitude, D=direction, onset=0.5, duration=1.0);
 
 # ╔═╡ 9ea6db4d-8859-4bb3-86eb-b16d91178dec
 sensor = Sensor(noise=Normal(0, 0.5));
@@ -272,18 +287,33 @@ begin
 end
 end
 
+# ╔═╡ a83e98d0-1275-437e-947d-d14613432253
+note(text) = Markdown.MD(Markdown.Admonition("note", "Note", [text]))
+
+# ╔═╡ d9f6f38e-0a10-411e-abf7-64fc75277963
+note(md"""
+You should **not** normally attempt to write a numerical optimizer for yourself. Entire generations of Applied Mathematicians and other numerical pro's have worked on those topics before you, so you should use their work:
+
+    1. Any optimizer you could come up with is probably going to perform below par, and be highly likely to contain mistakes.
+    2. Don't reinvent the wheel.
+That said, it's very important that we understand some basics about the main algorithms, because your task is **to choose from the wide array of available ones**.""")
+
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
 AlgebraOfGraphics = "cbdf2221-f076-402e-a563-3d30da359d67"
 CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+ImageIO = "82e4d734-157c-48bb-816b-45c225c6df19"
+ImageShow = "4e3cecfd-b093-5904-9786-8bbb286a6a31"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 
 [compat]
 AlgebraOfGraphics = "~0.6.8"
 CairoMakie = "~0.8.5"
 Distributions = "~0.25.62"
+ImageIO = "~0.6.5"
+ImageShow = "~0.3.6"
 PlutoUI = "~0.7.39"
 """
 
@@ -293,7 +323,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.8.0-rc1"
 manifest_format = "2.0"
-project_hash = "3c8b7533f980dc02c993f6d674a2c7eccd4e9b80"
+project_hash = "b977e4d63b0f33635df816e2030720ff37f0583f"
 
 [[deps.AbstractFFTs]]
 deps = ["ChainRulesCore", "LinearAlgebra"]
@@ -696,6 +726,12 @@ git-tree-sha1 = "f7be53659ab06ddc986428d3a9dcc95f6fa6705a"
 uuid = "b5f81e59-6552-4d32-b1f0-c071b021bf89"
 version = "0.2.2"
 
+[[deps.ImageBase]]
+deps = ["ImageCore", "Reexport"]
+git-tree-sha1 = "b51bb8cae22c66d0f6357e3bcb6363145ef20835"
+uuid = "c817782e-172a-44cc-b673-b171935fbb9e"
+version = "0.1.5"
+
 [[deps.ImageCore]]
 deps = ["AbstractFFTs", "ColorVectorSpace", "Colors", "FixedPointNumbers", "Graphics", "MappedArrays", "MosaicViews", "OffsetArrays", "PaddedViews", "Reexport"]
 git-tree-sha1 = "9a5c62f231e5bba35695a20988fc7cd6de7eeb5a"
@@ -707,6 +743,12 @@ deps = ["FileIO", "IndirectArrays", "JpegTurbo", "LazyModules", "Netpbm", "OpenE
 git-tree-sha1 = "d9a03ffc2f6650bd4c831b285637929d99a4efb5"
 uuid = "82e4d734-157c-48bb-816b-45c225c6df19"
 version = "0.6.5"
+
+[[deps.ImageShow]]
+deps = ["Base64", "FileIO", "ImageBase", "ImageCore", "OffsetArrays", "StackViews"]
+git-tree-sha1 = "b563cf9ae75a635592fc73d3eb78b86220e55bd8"
+uuid = "4e3cecfd-b093-5904-9786-8bbb286a6a31"
+version = "0.3.6"
 
 [[deps.Imath_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -1530,7 +1572,10 @@ version = "3.5.0+0"
 # ╟─45cd5b3a-0a3d-4e80-8cc1-33b734016ad6
 # ╟─96f3de55-017f-4497-a9ee-0842c1e4a600
 # ╟─54513b17-f40a-4948-abfa-ff13e5fdc48b
-# ╠═147b95f9-903e-440e-92a4-f59a9f5897e8
+# ╟─147b95f9-903e-440e-92a4-f59a9f5897e8
+# ╟─bd29c3c5-8678-493c-b7ca-1209461d9941
+# ╠═f29282a5-8f30-4759-9481-cf1153b91262
+# ╠═d9f6f38e-0a10-411e-abf7-64fc75277963
 # ╟─6d343fb0-0eb5-43e7-ae6b-34c62a7da084
 # ╠═df7ab325-d9ff-4bf7-9bad-d21bd6085305
 # ╟─50159681-0c1c-4961-8318-d84ab7e95fce
@@ -1546,5 +1591,6 @@ version = "3.5.0+0"
 # ╠═2c12b0de-ed33-44b0-88d8-3f3195eb9e98
 # ╠═590e843d-5881-4e41-aab8-3c4ef6bc83bc
 # ╠═2ee44f38-df4c-4109-b099-eb159fc0d0fa
+# ╠═a83e98d0-1275-437e-947d-d14613432253
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
