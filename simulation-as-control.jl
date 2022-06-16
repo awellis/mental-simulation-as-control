@@ -148,6 +148,8 @@ $$\begin{align}
 \theta_{t+1} &= \theta_{t} + \Delta t \cdot \omega_{t} + \frac{1}{2} \Delta t ^2 \cdot \alpha_t \\
 
 \end{align}$$
+
+where $D$, $A$, $\phi$ are the direction (sign), amplitude and phase, i.e. parameters of the sinusiodal acceleration. 
 """
 
 # ╔═╡ db19811e-6680-4c7e-98d8-652b4d35214a
@@ -160,6 +162,12 @@ amplitude = @bind amplitude PlutoUI.Slider(0:20, default = 10)
 
 # ╔═╡ 50159681-0c1c-4961-8318-d84ab7e95fce
 direction = @bind direction Select(["left", "right"])
+
+# ╔═╡ 43165e68-2265-4bf9-8f19-0dea04f29cfb
+duration = @bind duration PlutoUI.Slider(1:6, default = 2)
+
+# ╔═╡ f6fc7de8-db7b-4861-b045-b385f2ad97d5
+onset = @bind onset PlutoUI.Slider(1:duration, default = 0.5)
 
 # ╔═╡ 2983a87e-7c52-447a-bbeb-3baeed09e611
 show_observations = @bind show_observations CheckBox()
@@ -192,7 +200,7 @@ begin
 end
 
 # ╔═╡ 57bea528-1106-4935-bfd3-c96426b39e15
-mu = PlannedMovement(A=amplitude, D=direction, onset=0.5, duration=1.0);
+mu = PlannedMovement(A=amplitude, D=direction, onset=onset, duration=duration);
 
 # ╔═╡ 9ea6db4d-8859-4bb3-86eb-b16d91178dec
 sensor = Sensor(noise=Normal(0, 1.0));
@@ -248,7 +256,7 @@ end
 end
 
 # ╔═╡ bb7be262-3487-4130-ab9c-8d1d46c51c3f
-s = simulate(mu, sensor, Δt=0.01, duration=2)
+s = simulate(mu, sensor, Δt=0.01, duration=onset+duration+2)
 
 # ╔═╡ 9a641cd1-f031-4dc9-837f-e9e69a13566d
 md"""
@@ -273,7 +281,7 @@ TableOfContents(title="📚 Table of Contents",
 # ╔═╡ 2ee44f38-df4c-4109-b099-eb159fc0d0fa
 begin
 	publication_theme() = Theme(
-		fontsize=24, font="sans",
+		fontsize=18, font="sans",
 		Axis=(xlabelsize=20, xgridstyle=:dash, ygridstyle=:dash,
         xtickalign=1, ytickalign=1, yticksize=10, xticksize=10,
         xlabelpadding=-5, ylim=(0, 5)), 
@@ -288,10 +296,10 @@ begin
     f1 = lines(s.timesteps, s.α,
         linewidth=3,
         color=:black,
-		linestyle=:dash,
+		linestyle=:solid,
 		label = "Acceleration",
         axis=(xticks=LinearTicks(6),
-            xlabel="Tieme (s)",
+            xlabel="Time (s)",
             ylabel="Position (arbitrary units)",
             xgridstyle=:dash, ygridstyle=:dash))
 	f2 = lines!(s.timesteps, s.ω,
@@ -309,8 +317,8 @@ begin
         	markersize=6,
 	label = "Observations")
 	vspan!([0, mu.onset + mu.duration], [mu.onset, maximum(s.timesteps)],color = [(c, 0.2) for c in [:grey, :grey]])
-    ylims!(minimum(s.α) - 1, maximum(s.α) + 1)
-	axislegend()
+    ylims!(min(minimum(s.α), minimum(s.θ)) - 1, max(maximum(s.α), maximum(s.θ)) + 1)
+	axislegend(position = :rb, orientation = :horizontal)
     current_figure()
 end
 end
@@ -1606,11 +1614,13 @@ version = "3.5.0+0"
 # ╟─f29282a5-8f30-4759-9481-cf1153b91262
 # ╟─d9f6f38e-0a10-411e-abf7-64fc75277963
 # ╟─93b6a338-4222-4f1c-a61f-4ae3c53a3569
-# ╠═51799b48-ab66-49f6-b675-11d2f556f1b2
+# ╟─51799b48-ab66-49f6-b675-11d2f556f1b2
 # ╟─d62199a4-c460-484f-9793-b49af77b15bb
 # ╟─db19811e-6680-4c7e-98d8-652b4d35214a
-# ╟─6d343fb0-0eb5-43e7-ae6b-34c62a7da084
-# ╟─50159681-0c1c-4961-8318-d84ab7e95fce
+# ╠═6d343fb0-0eb5-43e7-ae6b-34c62a7da084
+# ╠═50159681-0c1c-4961-8318-d84ab7e95fce
+# ╟─43165e68-2265-4bf9-8f19-0dea04f29cfb
+# ╠═f6fc7de8-db7b-4861-b045-b385f2ad97d5
 # ╠═57bea528-1106-4935-bfd3-c96426b39e15
 # ╠═9ea6db4d-8859-4bb3-86eb-b16d91178dec
 # ╠═bb7be262-3487-4130-ab9c-8d1d46c51c3f
