@@ -1,6 +1,11 @@
 ### A Pluto.jl notebook ###
 # v0.19.8
 
+#> [frontmatter]
+#> author = "Andrew Ellis"
+#> title = "Mental simulation as control"
+#> date = "2022-06-16"
+
 using Markdown
 using InteractiveUtils
 
@@ -246,6 +251,9 @@ end
 
 # ╔═╡ 57bea528-1106-4935-bfd3-c96426b39e15
 mu = PlannedMovement(A=amplitude, D=direction, onset=onset, duration=duration);
+
+# ╔═╡ 88b40a8d-900b-40c2-be5d-5fb32923919b
+mu
 
 # ╔═╡ 9ea6db4d-8859-4bb3-86eb-b16d91178dec
 sensor = Sensor(noise=Normal(0, 1.0));
@@ -931,9 +939,9 @@ version = "0.6.8"
 
 [[deps.DynamicPPL]]
 deps = ["AbstractMCMC", "AbstractPPL", "BangBang", "Bijectors", "ChainRulesCore", "Distributions", "LinearAlgebra", "MacroTools", "Random", "Setfield", "Test", "ZygoteRules"]
-git-tree-sha1 = "b14a8ab2603c6450294450eea703fac366001816"
+git-tree-sha1 = "5d1704965e4bf0c910693b09ece8163d75e28806"
 uuid = "366bfd00-2699-11ea-058f-f148b4cae6d8"
-version = "0.19.2"
+version = "0.19.1"
 
 [[deps.EarCut_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -2255,6 +2263,7 @@ version = "3.5.0+0"
 # ╟─c6b44155-bd04-45dd-bba6-9b85a79d2487
 # ╟─ec74d6c2-e223-41cd-b1f7-3e6a6945d829
 # ╟─73a771b4-ad0f-4c64-bfb7-38aba7dc90f2
+# ╠═88b40a8d-900b-40c2-be5d-5fb32923919b
 # ╠═50fe5674-cbde-4443-b3d9-4cc42beb59dd
 # ╠═3c0cc555-3670-4ce5-a6b8-bea14cbc06fc
 # ╠═df45ae13-8625-40fc-9520-322a47eb4855
