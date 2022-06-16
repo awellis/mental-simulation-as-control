@@ -150,11 +150,6 @@ $$\begin{align}
 \end{align}$$
 """
 
-# ╔═╡ d62199a4-c460-484f-9793-b49af77b15bb
-md"""
-We are assuming that the agent can only perform one type of motion (sinusiodal acceleration), and has perfect knowledge of the form of the acceleration. Further, the acceleration is parameterized using $D$, $A$, $\phi$. $f$ is set to $1$ because the agent's motor system can only perform a single cycle.
-"""
-
 # ╔═╡ db19811e-6680-4c7e-98d8-652b4d35214a
 md"""
 Let's try this out using a code example. You can use the sliders to set the amplitude and direction.
@@ -325,10 +320,12 @@ note(text) = Markdown.MD(Markdown.Admonition("note", "Note", [text]))
 
 # ╔═╡ d9f6f38e-0a10-411e-abf7-64fc75277963
 note(md"""
-The agents observations are of course a model of a sensory system.""")
+The agent's observations are of course a model of a sensory system.""")
 
-# ╔═╡ eeb33ece-3f14-4bd8-b36d-0a7492e49184
-note(md"""If the agent is able to numerically integrate its acceleration, it can work out its position.""")
+# ╔═╡ d62199a4-c460-484f-9793-b49af77b15bb
+note(md"""
+We are assuming that the agent can only perform one type of motion (sinusiodal acceleration), and has perfect knowledge of the form of the acceleration. Further, the acceleration is parameterized using $D$, $A$, $\phi$. $f$ is set to $1$ because the agent's motor system can only perform a single cycle pf motion.
+""")
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -1611,7 +1608,6 @@ version = "3.5.0+0"
 # ╟─93b6a338-4222-4f1c-a61f-4ae3c53a3569
 # ╠═51799b48-ab66-49f6-b675-11d2f556f1b2
 # ╟─d62199a4-c460-484f-9793-b49af77b15bb
-# ╟─eeb33ece-3f14-4bd8-b36d-0a7492e49184
 # ╟─db19811e-6680-4c7e-98d8-652b4d35214a
 # ╟─6d343fb0-0eb5-43e7-ae6b-34c62a7da084
 # ╟─50159681-0c1c-4961-8318-d84ab7e95fce
