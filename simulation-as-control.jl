@@ -65,6 +65,19 @@ In contrast, inverse models invert the system by providing the motor command whi
 
 As both forward and inverse models depend on the dynamics of the motor system, which _change throughout life and under different contextual conditions, these models must be adaptable_.
 
+## Multiple models
+
+Wolpert & Kawato (1998) claim that there is evidence for the existence of multiple (independent) controllers (as opposed to one monolithic controller). The problem of choosing which model is responsible for actually controlling behaviour can be seen as a model selection problem.
+
+__Assumptions__: At any given time, only certain controllers are active. Only the active controllers can be assessed for performance errors. 
+
+The basic idea of Wolpert & Kawato's model is that multiple inverse models exist to control the system and each is augmented with a corresponding forward model. The brain therefore contains multiple pairs of coupled forward and inverse models. Further, there exists a _responsibility signal_ (for a given model) which reflects, at any given time, the degree to which each pair of forward and inverse models should be responsible for controlling the current behavior. This responsibility signal is derived from the combination of two processes. The first process uses the forward model’s predictions errors. The second process, the responsibility predictors, use sensory contextual cues to predict the responsibility of the module and can therefore select controllers prior to movement initiation in a feedforward manner.
+
+> I don't know yet if it's worth exploring their model in great detail.
+
+
+
+
 ## Forward and inverse models as inference
 
 In a more modern take, forward and inverse models can be interpreted as two types of inference in a probabilistic model. 
@@ -90,24 +103,31 @@ This describes the _forward_ dynamics of the system. We assume that the dynamics
 The aim of control is to produce a system which can generate an appropriate motor command $u_t$ given the desired state, $x_{t+1}^\ast$.
 """
 
-# ╔═╡ b1161fc7-7779-44ec-a570-b335b3ba9745
+# ╔═╡ 54513b17-f40a-4948-abfa-ff13e5fdc48b
 md"""
-## Code
-
+## Simulations
 """
 
-# ╔═╡ 7364115d-5f01-45af-86a0-ca3817ccee42
-begin
-	tsteps = 200
-	x = Array{Float64}(undef, tsteps)
+# ╔═╡ 147b95f9-903e-440e-92a4-f59a9f5897e8
 
-end
 
 # ╔═╡ 6d343fb0-0eb5-43e7-ae6b-34c62a7da084
 amplitude = @bind amplitude PlutoUI.Slider(0:20, default = 10)
 
 # ╔═╡ df7ab325-d9ff-4bf7-9bad-d21bd6085305
 fun = @bind fun Select([sin, cos])
+
+# ╔═╡ 50159681-0c1c-4961-8318-d84ab7e95fce
+direction = @bind direction Select(["left", "right"])
+
+# ╔═╡ 2983a87e-7c52-447a-bbeb-3baeed09e611
+show_observations = @bind show_observations CheckBox()
+
+# ╔═╡ b1161fc7-7779-44ec-a570-b335b3ba9745
+md"""
+## Code
+
+"""
 
 # ╔═╡ 10e1593e-0216-45e6-9c36-206e54848f67
 begin
@@ -121,15 +141,20 @@ begin
     D::String = "right" # direction
     onset::Real = 1
     duration::Real = 1
-    # @assert A >= zero(A)
 	end
 	
 	function acceleration(D::Number, A::Number, 
 		f::Number, t::Number, start::Number)
-		D * A * fun.(2*π*f*(t-start))
+		D * A * sin.(2*π*f*(t-start))
 	end
 	
 end
+
+# ╔═╡ 57bea528-1106-4935-bfd3-c96426b39e15
+mu = PlannedHeadTurn(A=amplitude, D=direction, onset=0.5, duration=1.0);
+
+# ╔═╡ 9ea6db4d-8859-4bb3-86eb-b16d91178dec
+sensor = Sensor(noise=Normal(0, 0.5));
 
 # ╔═╡ 832c29eb-49b1-41d4-98e7-960fb30ed9a1
 begin
@@ -184,20 +209,8 @@ begin
 end
 end
 
-# ╔═╡ 50159681-0c1c-4961-8318-d84ab7e95fce
-direction = @bind direction Select(["left", "right"])
-
-# ╔═╡ 57bea528-1106-4935-bfd3-c96426b39e15
-mu = PlannedHeadTurn(A=amplitude, D=direction, onset=0.1, duration=1.0);
-
-# ╔═╡ 9ea6db4d-8859-4bb3-86eb-b16d91178dec
-sensor = Sensor(noise=Normal(0, 0.5));
-
 # ╔═╡ bb7be262-3487-4130-ab9c-8d1d46c51c3f
 s = simulate(mu, sensor, Δt=0.01, duration=2);
-
-# ╔═╡ 2983a87e-7c52-447a-bbeb-3baeed09e611
-show_observations = @bind show_observations CheckBox()
 
 # ╔═╡ 9a641cd1-f031-4dc9-837f-e9e69a13566d
 md"""
@@ -253,7 +266,7 @@ begin
 	        color=(:black),
 			marker='◆',
         	markersize=6)
-	vspan!([0, 1], [0.2, 2],color = [(c, 0.2) for c in [:red, :orange]])
+	vspan!([0, mu.onset + mu.duration], [mu.onset, maximum(s.timesteps)],color = [(c, 0.2) for c in [:grey, :grey]])
     ylims!(minimum(s.α) - 1, maximum(s.α) + 1)
     current_figure()
 end
@@ -1514,20 +1527,21 @@ version = "3.5.0+0"
 # ╟─fde7f730-eca3-11ec-11fd-a3669efbfb62
 # ╟─9e4cf0fc-6654-4123-993e-39aa714b3731
 # ╟─7b82b21f-dd19-4f6b-89a4-917f3c7ad770
-# ╠═45cd5b3a-0a3d-4e80-8cc1-33b734016ad6
+# ╟─45cd5b3a-0a3d-4e80-8cc1-33b734016ad6
 # ╟─96f3de55-017f-4497-a9ee-0842c1e4a600
-# ╟─b1161fc7-7779-44ec-a570-b335b3ba9745
-# ╠═7364115d-5f01-45af-86a0-ca3817ccee42
-# ╠═10e1593e-0216-45e6-9c36-206e54848f67
-# ╠═832c29eb-49b1-41d4-98e7-960fb30ed9a1
+# ╟─54513b17-f40a-4948-abfa-ff13e5fdc48b
+# ╠═147b95f9-903e-440e-92a4-f59a9f5897e8
 # ╟─6d343fb0-0eb5-43e7-ae6b-34c62a7da084
-# ╟─df7ab325-d9ff-4bf7-9bad-d21bd6085305
+# ╠═df7ab325-d9ff-4bf7-9bad-d21bd6085305
 # ╟─50159681-0c1c-4961-8318-d84ab7e95fce
 # ╠═57bea528-1106-4935-bfd3-c96426b39e15
 # ╠═9ea6db4d-8859-4bb3-86eb-b16d91178dec
 # ╠═bb7be262-3487-4130-ab9c-8d1d46c51c3f
 # ╟─2983a87e-7c52-447a-bbeb-3baeed09e611
 # ╠═b0adc44e-8e3f-4f9e-b183-c943fd122c69
+# ╟─b1161fc7-7779-44ec-a570-b335b3ba9745
+# ╠═10e1593e-0216-45e6-9c36-206e54848f67
+# ╠═832c29eb-49b1-41d4-98e7-960fb30ed9a1
 # ╟─9a641cd1-f031-4dc9-837f-e9e69a13566d
 # ╠═2c12b0de-ed33-44b0-88d8-3f3195eb9e98
 # ╠═590e843d-5881-4e41-aab8-3c4ef6bc83bc
