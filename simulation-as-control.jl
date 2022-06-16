@@ -167,10 +167,10 @@ amplitude = @bind amplitude PlutoUI.Slider(0:20, default = 10)
 direction = @bind direction Select(["left", "right"])
 
 # ╔═╡ 43165e68-2265-4bf9-8f19-0dea04f29cfb
-duration = @bind duration PlutoUI.Slider(1:6, default = 2)
+duration = @bind duration PlutoUI.Slider(0.5:6, default = 2)
 
 # ╔═╡ f6fc7de8-db7b-4861-b045-b385f2ad97d5
-onset = @bind onset PlutoUI.Slider(1:duration, default = 0.5)
+onset = @bind onset PlutoUI.Slider(0:2, default = 1)
 
 # ╔═╡ 46a0daaa-ace4-4ecb-8ff1-09a88b634a1c
 md"""
@@ -2071,9 +2071,9 @@ version = "3.5.0+0"
 # ╟─d62199a4-c460-484f-9793-b49af77b15bb
 # ╟─db19811e-6680-4c7e-98d8-652b4d35214a
 # ╠═6d343fb0-0eb5-43e7-ae6b-34c62a7da084
-# ╠═50159681-0c1c-4961-8318-d84ab7e95fce
+# ╟─50159681-0c1c-4961-8318-d84ab7e95fce
 # ╟─43165e68-2265-4bf9-8f19-0dea04f29cfb
-# ╠═f6fc7de8-db7b-4861-b045-b385f2ad97d5
+# ╟─f6fc7de8-db7b-4861-b045-b385f2ad97d5
 # ╟─46a0daaa-ace4-4ecb-8ff1-09a88b634a1c
 # ╠═57bea528-1106-4935-bfd3-c96426b39e15
 # ╠═9ea6db4d-8859-4bb3-86eb-b16d91178dec
