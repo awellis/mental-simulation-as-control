@@ -347,43 +347,16 @@ begin
 	colnames = vcat(:iteration, ["$i" for i in 1:ncol(d)-1])
 	rename!(d, Symbol.(colnames))
 
-	nsamples = 500
+	nsamples = 100
 	dd = d[sample(axes(d, 1), nsamples; replace=false, ordered=true), :]
 
 	dd = DataFrames.stack(dd, Not([:iteration]),
-    	variable_name=:time, value_name=:ω)
+    	variable_name=:time, value_name=:θ)
 
 	dd = dd |>
     @mutate(time = parse(Int64, _.time),
             iteration = string.(_.iteration)) |>
-    @mutate(time = _.time*s.Δt) |> 
-    DataFrame
-
-end
-
-# ╔═╡ 2bf1a8ef-16f0-4da7-9766-e58455df7e83
-begin
-
-	marker='◆'
-	# marker=:hline
-
-	plt = data(dd) *
-     	visual(Lines, color = :steelblue3, linewidth = 0.2, alpha = 0.1) *
-    #  visual(Scatter, color = :steelblue3, 
-    #         markersize=2,  marker=marker, alpha = 0.1) *
-    #  visual(ScatterLines,
-    #         color = :steelblue3, linewidth = 0.2, alpha = 0.1,
-    #         markersize=2,  marker=marker) *
-     mapping(:time, :ω) *
-     mapping(group=:iteration)
-
-	fig2 = draw(plt)
-
-	lines!(s.timesteps, μθ, 
-        linewidth=1,
-        linestyle = :dash,
-        color=:steelblue4)
-	current_figure()
+    @mutate(time = _.time*s.Δt) |> DataFrame
 end
 
 # ╔═╡ bb226991-1eec-44f1-a4eb-dbcd9126e6e7
@@ -452,6 +425,32 @@ begin
     xub = mean_x .- q975.(eachslice(x, dims=2))
     return (μ=mean_x, lb=xlb, ub=xub)
 	end
+end
+
+# ╔═╡ 2bf1a8ef-16f0-4da7-9766-e58455df7e83
+begin
+
+	marker='◆'
+	# marker=:hline
+
+	plt = data(dd) *
+    #  	visual(Lines, color = :steelblue3, linewidth = 0.2, alpha = 0.1) *
+    # #  visual(Scatter, color = :steelblue3, 
+    # #         markersize=2,  marker=marker, alpha = 0.1) *
+     visual(ScatterLines,
+            color = :steelblue3, linewidth = 0.2, alpha = 0.05,
+            markersize=2,  marker=marker) *
+     mapping(:time, :θ) *
+    mapping(group=:iteration)
+
+	fig2 = draw(plt)
+	
+	μθ, lbθ, ubθ = compute_stats(θ)
+	lines!(s.timesteps, μθ, 
+        linewidth=2,
+        linestyle = :dash,
+        color=:steelblue3)
+	current_figure()
 end
 
 # ╔═╡ 9a641cd1-f031-4dc9-837f-e9e69a13566d
@@ -2294,7 +2293,7 @@ version = "3.5.0+0"
 # ╠═50fe5674-cbde-4443-b3d9-4cc42beb59dd
 # ╠═3c0cc555-3670-4ce5-a6b8-bea14cbc06fc
 # ╠═df45ae13-8625-40fc-9520-322a47eb4855
-# ╟─02d3cd9d-3c53-49e2-882c-056f3225bb27
+# ╠═02d3cd9d-3c53-49e2-882c-056f3225bb27
 # ╠═a3dcdc7d-4298-458f-ab7c-5a3ee55dd7fd
 # ╠═2bf1a8ef-16f0-4da7-9766-e58455df7e83
 # ╟─b1161fc7-7779-44ec-a570-b335b3ba9745
